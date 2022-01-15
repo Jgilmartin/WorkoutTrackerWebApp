@@ -1,17 +1,17 @@
-from flask import Flask, render_template, redirect, url_for, session, request
+from flask import Flask, render_template, redirect, url_for, session, request, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import current_user, login_user, LoginManager, UserMixin, logout_user
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite"
-db = SQLAlchemy(app)
+
 
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 app.secret_key = 'secret-key'
-
+db = SQLAlchemy(app)
 
 class Users(UserMixin,db.Model): 
     id = db.Column(db.Integer, primary_key=True) 
@@ -36,9 +36,9 @@ def index():
     print('landing')
     if(not current_user.is_authenticated):
         print('not_auth')
-        return redirect(url_for('manageLift'))
+        return redirect(url_for('login'))
     print('authenticated')
-    return render_template('login.html')
+    return redirect(url_for('login'))
 
 
 @app.route('/login', methods =['GET','POST'], endpoint='login')
@@ -46,7 +46,8 @@ def Login():
     print('postLogin')
     if request.method == 'GET':
         if(current_user.is_authenticated):
-            return redirect(url_for('studentView.html'))
+            print('already logged in')
+            return redirect(url_for('manageLift'))
         return render_template('login.html')
 
     if request.method == 'POST':
@@ -57,21 +58,35 @@ def Login():
         
         user = user.first()
         
-        if user is None:
+        if user is None or 'NULL':
+            flash('User not found. Try Registering?')
             return redirect(url_for('login'))
 
         if not user.checkPassword(request.form['password']):
             return redirect(url_for('login'))
 
         login_user(user)
-        print (user.userLevel)
+
         return render_template('studentView.html',userid = user.id)
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
 
 @app.route('/managelifts', methods = ['GET', 'POST'])
 def manageLift():
     if request.method == 'GET':
         return render_template('managelifts.html')
 
+@app.route('/admin', methods = ['GET', 'POST'])
+def adminView():
+    if request.method == 'GET':
+        if current_user.username == 1:
+            return render_template(adminView.html)
+        else:
+            return redirect(url_for('manageLift'))
 
 if __name__ == '__main__':
     app.run(host='localhost', port=5000, debug=True)
