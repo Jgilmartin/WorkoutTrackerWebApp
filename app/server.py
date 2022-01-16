@@ -60,7 +60,7 @@ def Login():
         
         if user is None or 'NULL':
             flash('User not found. Try Registering?')
-            return redirect(url_for('login'))
+            return
 
         if not user.checkPassword(request.form['password']):
             return redirect(url_for('login'))
@@ -79,6 +79,9 @@ def logout():
 def manageLift():
     if request.method == 'GET':
         return render_template('managelifts.html')
+
+    if request.method == 'POST':
+        pass
 
 @app.route('/admin', methods = ['GET', 'POST'])
 def adminView():
